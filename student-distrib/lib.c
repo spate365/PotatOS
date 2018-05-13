@@ -3,13 +3,13 @@
 
 #include "lib.h"
 
-#define VIDEO       0xB8000
-#define NUM_COLS    80
-#define NUM_ROWS    25
-#define ATTRIB      0x7
+/* 1 blue 2 green 3 teal 4 red 5 pink 6 orange
+* 7 grey 8 darker grey 9 lavender A lime green
+* B cyan C peach D hot pink E yellow F white
+*
+*/
+uint8_t ATTRIB = 0x09;
 
-static int screen_x;
-static int screen_y;
 static char* video_mem = (char *)VIDEO;
 
 /* void clear(void);
@@ -22,6 +22,9 @@ void clear(void) {
         *(uint8_t *)(video_mem + (i << 1)) = ' ';
         *(uint8_t *)(video_mem + (i << 1) + 1) = ATTRIB;
     }
+    screen_x = 0;
+    screen_y = 0;
+    update_cursor(0, 0);
 }
 
 /* Standard printf().
@@ -167,18 +170,95 @@ int32_t puts(int8_t* s) {
  * Inputs: uint_8* c = character to print
  * Return Value: void
  *  Function: Output a character to the console */
-void putc(uint8_t c) {
-    if(c == '\n' || c == '\r') {
+void putc(uint8_t c) 
+{
+    if(c == '\n' || c == '\r') 
+    {
         screen_y++;
         screen_x = 0;
-    } else {
+
+        if(screen_y == NUM_ROWS)
+            scroll_up();
+    } 
+    else if(c == '\b')
+    {
+        if(screen_x > 0)
+            screen_x--;
+        else
+        {
+            if(screen_y > 0)
+            {
+                screen_y--;
+                screen_x = NUM_COLS-1;
+            }
+        }
+
+        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+        *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+
+    }
+    else if(c == '\t')
+    {
+            if(screen_x < (NUM_COLS-4))
+                screen_x = screen_x + 4;
+            else
+            {
+                screen_y++;
+                screen_x = 4;
+
+                if(screen_y == NUM_ROWS)
+                    scroll_up();
+            }
+    }
+
+    else 
+    {
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = c;
         *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
-        screen_x++;
-        screen_x %= NUM_COLS;
-        screen_y = (screen_y + (screen_x / NUM_COLS)) % NUM_ROWS;
+
+        if(screen_x == NUM_COLS-1)
+        {
+            screen_x = 0;
+            screen_y++;
+
+            if(screen_y == NUM_ROWS)
+                scroll_up();
+        }
+        else
+        {
+            screen_x++;
+        }
     }
+    update_cursor(screen_x, screen_y);
 }
+
+/* void reset();
+ * Inputs: none
+ * Return Value: none
+ * Function: Resets the screen x and y */
+void reset()
+{
+    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1)) = ' ';
+    *(uint8_t *)(video_mem + ((NUM_COLS * screen_y + screen_x) << 1) + 1) = ATTRIB;
+
+    update_cursor(screen_x, screen_y);
+}
+
+/* Inspired by OS Dev/Text_Mode_Cursor */
+/* void update_cusor();
+ * Inputs: int x = x position to update cursor to 
+ *         int y = y position to update cursor to 
+ * Return Value: none
+ * Function: update the cursor to a particular x and y value */
+void update_cursor(int x, int y)
+{
+    uint16_t pos = y * NUM_COLS + x;
+ 
+    outb(0x0F, 0x3D4);
+    outb((uint8_t) (pos & 0xFF), 0x3D5);
+    outb(0x0E, 0x3D4);
+    outb((uint8_t) ((pos >> 8) & 0xFF), 0x3D5);
+} 
 
 /* int8_t* itoa(uint32_t value, int8_t* buf, int32_t radix);
  * Inputs: uint32_t value = number to convert
@@ -464,13 +544,31 @@ int8_t* strncpy(int8_t* dest, const int8_t* src, uint32_t n) {
     return dest;
 }
 
-/* void test_interrupts(void)
+
+/* void scroll_up(void)
  * Inputs: void
  * Return Value: void
- * Function: increments video memory. To be used to test rtc */
-void test_interrupts(void) {
-    int32_t i;
-    for (i = 0; i < NUM_ROWS * NUM_COLS; i++) {
-        video_mem[i << 1]++;
+ * Function: Scrolls up the screen*/
+void scroll_up(void)
+{
+    int i, j;
+
+    for(i = 0; i < NUM_ROWS - 1 ; ++i)
+    {
+        for(j = 0; j < NUM_COLS; ++j)
+        {
+            *(uint8_t *)(video_mem + ((NUM_COLS * i + j) << 1)) =  *(uint8_t *)(video_mem + ((NUM_COLS * (i + 1) + j) << 1));
+            *(uint8_t *)(video_mem + ((NUM_COLS * i + j) << 1) + 1) = ATTRIB;
+        }
     }
+
+    i = NUM_ROWS - 1;
+    for(j = 0; j < NUM_COLS; ++j)
+    {
+        *(uint8_t *)(video_mem + ((NUM_COLS * i + j) << 1)) = ' ';
+        *(uint8_t *)(video_mem + ((NUM_COLS * i + j) << 1) + 1) = ATTRIB;
+    }
+    screen_x = 0;
+    screen_y = NUM_ROWS - 1;
 }
+

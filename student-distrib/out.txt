@@ -1,0 +1,12 @@
+Makefile:39: Makefile.dep: No such file or directory
+make: Warning: File `idt.c' has modification time 3.8e+04 s in the future
+make: Warning: File `Makefile.dep' has modification time 4.4e+04 s in the future
+filesys.c: In function ‘read_dentry_by_name’:
+filesys.c:189: warning: pointer targets in passing argument 1 of ‘strlen’ differ in signedness
+keyboard.c: In function ‘kb_handler’:
+keyboard.c:285: warning: cast to pointer from integer of different size
+keyboard.c:293: warning: cast to pointer from integer of different size
+system_calls.c: In function ‘vidmap’:
+system_calls.c:355: warning: comparison between pointer and integer
+system_calls.c:355: warning: comparison between pointer and integer
+make: warning:  Clock skew detected.  Your build may be incomplete.

@@ -1,0 +1,170 @@
+Bug Log
+
+####################################################
+					CHECKPOINT 1
+####################################################
+
+	1. Interrupts were not working
+		Found by: Darren Jiang and Smit Patel
+		Solution: use lidt (don't forget this)
+
+	2. Paging was not enabling correctly
+		Found by: Parul Agrawal
+		Solution: the order in which control registers were set was wrong, cr0 needed to be set last
+
+	3. Paging was not mapping the video memory to the correct address
+		Found by: Parul Agrawal
+		Solution: Miscalculation in bit shifting, whoops. Shifted by 20 and not 12, got mistaken.
+		
+	4. inline assembly had incorrect format, there were spaces between /n and /
+		Found by: Parul Agrawal
+		Solution: Put quotation marks around each line of inline assembly in the enable paging function. Basically
+		a lot of syntax needed fixing for the inline assembly
+		
+	5. Random interrupt messages coming up when keys were pressed quickly
+		Found by: Smit Patel and Darren Jiang
+		Solution: Added a wrapper for the rtc handler and keyboard handler
+		
+	6. Keyboard and RTC do not work at the same time
+		Found by: Darren Jiang and Smit Patel
+		Solution: logical error in enable irq/DON'T LISTEN TO RANDOS IN THE LAB THEY WILL MAKE YOU CRY
+
+####################################################
+					CHECKPOINT 2
+####################################################
+
+	1. RTC frequency was wrong
+		Found by: Darren Jiang 
+		Solution: Changed how RTC frequency rate is determined
+
+	2. Keyboard printing twice
+		Found by: Darren Jiang 
+		Solution: Ignored keystroke when keyboard is spammed
+
+	3. File System read_data by name didn't parse correctly
+		Found by: Smit Patel
+		Solution: Used read by index to figure it out
+
+	4. Read_Data did not work if the file was bigger than 1 data block
+		Found by: Darren Jiang and Smit Patel
+		Solution: Figured out better logic using flag system
+		
+	5. Backspace messed up keyboard buffer
+		Found by: Darren Jiang
+		Solution: Rewrote the logic for the keyboard buffer
+		
+	6. Keyboard buffer went past max value
+	Found by: Darren Jiang
+	Solution: Rewrote the logic for the keyboard buffer
+	
+	7. Scrolling up only worked when pressing enter
+	Found by: Darren Jiang
+	Solution: Scroll up function was fixed to account for this
+
+####################################################
+					CHECKPOINT 3
+####################################################
+
+	1. Page fault at iret
+		Found by: Darren Jiang and Smit Patel
+		Solution: Entry point was off by a few bytes
+
+	2. Programs would keep printing last values
+		Found by: Darren Jiang 
+		Solution: read/write were rewritten
+
+	3. PCB was not placed at the correct location
+		Found by: Smit Patel
+		Solution: changed the math for calculating global process number
+
+	4. Term_read was not reading the commands
+		Found by: Smit Patel
+		Solution: Rewrote term_read
+		
+	5. Verylargetextwithverylongname.txt was a valid filename
+	Found by: Smit Patel
+	Solution: Fixed the arguments to be a max size of 32 bytes
+	
+	6. Nothing printing onto screen even though everything was loaded into memory
+	Found by: Darren Jiang
+	Solution: PCB struct jump tables were fixed to map correctly
+	
+	7. Random exceptions when executing
+	Found by: Darren Jiang
+	Solution: Fixed PCB to link to the correct process number
+	
+####################################################
+					CHECKPOINT 4
+####################################################
+	
+	1. Filename not being passed correctly for fish
+		Found by: Darren Jiang and Smit Patel
+		Solution: rewriting read_data 
+
+	2. Pagefaulting after case 3 in syserr
+		Found by: Darren Jiang
+		Solution: Allocated space for an array incorrectly in execute
+
+	3. Pagefaulting after syserr
+		Found by: Darren Jiang
+		Solution: Allocated space for a pcb incorrectly in read/write/open/close
+
+	4. Read_data not returning correct nbytes
+		Found by: Darren Jiang
+		Solution: rewriting read_data (again)
+
+	5. Vidmap didn't point to the correct location
+			Found by: Smit Patel
+		Solution: rewrite create_video_page
+
+####################################################
+					CHECKPOINT 5
+####################################################
+
+	1. Exiting one process on a terminal halted another program on the other terminal(s)
+		Found by: Darren Jiang and Smit Patel
+		Solution: Fix how the process number worked
+
+	2. Context switching between multiple terminals not working
+		Found by: Darren Jiang and Smit Patel
+		Solution: Switch process page
+		
+	3. Context switching in scheduler not working
+		Found by: Darren Jiang and Smit Patel
+		Solution: Start three shells using PIT, save ebp/esp of all three
+
+	4. Keystrokes are registered in the wrong terminal
+		Found by: Darren Jiang and Smit Patel
+		Solution: Disable keyboard interrupts when scheduled terminal is not on current terminal
+
+	5. When two counters were running, a general protection error occured when one halted
+		Found by: Darren Jiang and Smit Patel
+		Solution: Change how halt determined which process to stop
+
+	6. When only one pingpong is run in the background, it would move faster than normal
+		Found by: Darren Jiang and Smit Patel
+		Solution: Change how read determines the process number
+
+	7. Grep crashes OS
+		Found by: Darren Jiang and Smit Patel
+		Solution: Change how the current pcb was found
+
+	8. Fish crashes OS
+		Found by: Darren Jiang and Smit Patel
+		Solution: Change how the current process was found
+
+	9. When multiple pingpongs are run, everything moves slower
+		Found by: Darren Jiang and Smit Patel
+		Solution: Change how the RTC flags are set for RTC read
+
+	10. Multiple terminals would not register commands
+		Found by: Smit Patel
+		Solution: Corrected the syntax used by keyboard for Enter Key
+	
+	11. Enter spamming would bleed into another terminal
+	Found by: Darren Jiang
+	Solution: Disabled keyboard interrupts in the PIT handler until the PIT interrupt was handled
+	
+	11. PCB was created on bottom of kernel stack
+	Found by: Smit Patel
+	Solution: tss esp0 address value was changed to point to the true bottom of the stack

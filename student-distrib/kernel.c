@@ -8,6 +8,14 @@
 #include "i8259.h"
 #include "debug.h"
 #include "tests.h"
+#include "idt.h"
+#include "paging.h"
+/* Files Imported */
+#include "keyboard.h"
+#include "rtc.h"
+#include "pit.h"
+#include "filesys.h"
+#include "system_calls.h"
 
 #define RUN_TESTS
 
@@ -53,6 +61,11 @@ void entry(unsigned long magic, unsigned long addr) {
         int i;
         module_t* mod = (module_t*)mbi->mods_addr;
         while (mod_count < mbi->mods_count) {
+            /************************************/
+
+            init_filesys((unsigned int)mod->mod_start);
+
+            /************************************/
             printf("Module %d loaded at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_start);
             printf("Module %d ends at address: 0x%#x\n", mod_count, (unsigned int)mod->mod_end);
             printf("First few bytes of module:\n");
@@ -137,24 +150,33 @@ void entry(unsigned long magic, unsigned long addr) {
     }
 
     /* Init the PIC */
+    clear();
     i8259_init();
 
     /* Initialize devices, memory, filesystem, enable device interrupts on the
      * PIC, any other initialization stuff... */
+	kb_init();
+    pit_init();
+	paging_init();
+    init_func();
+    rtc_init();
 
     /* Enable interrupts */
+    sti();
+
+    /* Enable terminals */
+    change_screen(0); 
+
     /* Do not enable the following until after you have set up your
      * IDT correctly otherwise QEMU will triple fault and simple close
      * without showing you any output */
-    /*printf("Enabling Interrupts\n");
-    sti();*/
 
 #ifdef RUN_TESTS
     /* Run tests */
     launch_tests();
 #endif
     /* Execute the first program ("shell") ... */
-
+    // why don't u execute shell here?
     /* Spin (nicely, so we don't chew up cycles) */
     asm volatile (".1: hlt; jmp .1;");
 }
